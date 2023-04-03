@@ -1,5 +1,6 @@
 import express from "express";
 import { config } from "dotenv";
+import { errorMiddleware } from "./middlewares/error.js";
 
 config({
   path: "./data/config.env",
@@ -19,3 +20,6 @@ app.get("/", (req, res, next) => {
 import user from "./routes/user.js";
 
 app.use("/api/v1/user", user);
+
+// Using Error Middleware
+app.use(errorMiddleware);
