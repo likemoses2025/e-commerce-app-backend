@@ -59,7 +59,9 @@ const schema = new mongoose.Schema({
   otp_expires: Date,
 });
 
-schema.pre("save", async function () {
+schema.pre("save", async function (next) {
+  // 패스워드 변경이 아닌경우 bcrypt 해쉬 기능을 넘긴다.
+  if (!this.isModified("password")) next();
   this.password = await bcrypt.hash(this.password, 10);
 });
 
