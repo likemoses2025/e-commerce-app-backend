@@ -56,7 +56,7 @@ const schema = new mongoose.Schema({
   },
 
   otp: Number,
-  otp_expires: Date,
+  otp_expire: Date,
 });
 
 schema.pre("save", async function (next) {

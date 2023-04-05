@@ -1,7 +1,13 @@
 import { asyncError } from "../middlewares/error.js";
 import { User } from "../models/user.js";
 import ErrorHandler from "../utils/error.js";
-import { cookieOptions, sendToken } from "../utils/features.js";
+import {
+  cookieOptions,
+  getDataUri,
+  sendEmail,
+  sendToken,
+} from "../utils/features.js";
+import cloudinary from "cloudinary";
 
 export const login = asyncError(async (req, res, next) => {
   const { email, password } = req.body;
@@ -28,13 +34,19 @@ export const signup = asyncError(async (req, res, next) => {
   const { name, email, password, address, city, country, pinCode } = req.body;
 
   let user = await User.findOne({ email });
-  console.log(user);
 
   if (user) return next(new ErrorHandler("User Already Exist", 400));
 
-  // Add Cloudinary Here
+  let avatar = undefined;
+
+  if (req.file) {
+    const file = getDataUri(req.file);
+    const myCloud = await cloudinary.v2.uploader.upload(file.content);
+    avatar = { public_id: myCloud.public_id, url: myCloud.secure_url };
+  }
 
   user = await User.create({
+    avatar,
     name,
     email,
     password,
@@ -112,5 +124,88 @@ export const changePassword = asyncError(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Password Updated successfully",
+  });
+});
+
+export const updatePic = asyncError(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+
+  const file = getDataUri(req.file);
+
+  // 클라우드 이미지 삭제
+  await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+
+  // 클라우드 이미지 등록
+  const myCloud = await cloudinary.v2.uploader.upload(file.content);
+  console.log("mycloud", myCloud);
+  user.avatar = { public_id: myCloud.public_id, url: myCloud.secure_url };
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Avatar Updated Successfully",
+  });
+});
+
+export const forgetPassword = asyncError(async (req, res, next) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) return next(new ErrorHandler("Incorrect Email", 404));
+
+  // Max,Min 2000,10000
+  // math.random()*(max-min)+min
+  const randomNumber = Math.random() * (999999 - 100000) + 100000;
+  const otp = Math.floor(randomNumber);
+
+  // otp Expire = 15min
+  const otp_expire = 15 * 60 * 1000;
+
+  user.otp = otp;
+  user.otp_expire = new Date(Date.now() + otp_expire);
+  await user.save();
+
+  const message = `Your OTP For Reseting Password is ${otp}. \n Please Ignore If you Haven't requested this.`;
+
+  try {
+    await sendEmail("OTP For Reseting Password", user.email, message);
+  } catch (error) {
+    user.otp = null;
+    user.otp_expire = null;
+    await user.save();
+    return next(error);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Email sent to ${user.email}`,
+  });
+});
+
+export const resetPassword = asyncError(async (req, res, next) => {
+  const { otp, password } = req.body;
+
+  const user = await User.findOne({
+    otp, //otp 번호가 같고
+    otp_expire: { $gt: Date.now() }, //현재시간보다 큰 otp_expire 찾기
+  });
+
+  if (!user)
+    return next(
+      new ErrorHandler("Incorrect OTP Number or has been expired", 400)
+    );
+
+  if (!password) return next(new ErrorHandler("Please Enter New Password"));
+
+  user.password = password;
+  user.otp = undefined;
+  user.otp_expire = undefined;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully, You Can Login Now !!",
   });
 });
