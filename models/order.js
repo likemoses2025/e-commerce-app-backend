@@ -59,6 +59,7 @@ const schema = new mongoose.Schema({
   },
 
   paidAt: Date,
+
   paymentInfo: {
     id: String,
     status: String,
