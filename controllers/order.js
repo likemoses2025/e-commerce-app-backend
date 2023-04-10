@@ -1,6 +1,7 @@
 import { asyncError } from "../middlewares/error.js";
 import { Order } from "../models/order.js";
 import { Product } from "../models/product.js";
+import ErrorHandler from "../utils/error.js";
 
 export const createOrder = asyncError(async (req, res, next) => {
   const {
@@ -37,4 +38,32 @@ export const createOrder = asyncError(async (req, res, next) => {
     success: true,
     message: "Order Placed Successfully",
   });
+});
+
+export const getMyOrders = asyncError(async (req, res, next) => {
+  // 주문자의 아이디로 오더내역 가져오기
+  const orders = await Order.find({ user: req.user._id });
+
+  res.status(200).json({ success: true, orders });
+});
+
+export const getAdminOrders = asyncError(async (req, res, next) => {
+  // 주문자의 아이디로 오더내역 가져오기
+  const orders = await Order.find({});
+
+  res.status(200).json({ success: true, orders });
+});
+
+export const getOrderDetails = asyncError(async (req, res, next) => {
+  const order = Order.findById(req.params.id);
+
+  if (!order) return next(new ErrorHandler("Order not found", 404));
+
+  res.status(200).json({ success: true, order });
+});
+
+export const processOrder = asyncError(async (req, res, next) => {
+  const orders = await Order.find({ user: req.user._id });
+
+  res.status(200).json({ success: true, orders });
 });
