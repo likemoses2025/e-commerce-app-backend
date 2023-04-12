@@ -40,13 +40,6 @@ export const createOrder = asyncError(async (req, res, next) => {
   });
 });
 
-export const getMyOrders = asyncError(async (req, res, next) => {
-  // 주문자의 아이디로 오더내역 가져오기
-  const orders = await Order.find({ user: req.user._id });
-
-  res.status(200).json({ success: true, orders });
-});
-
 export const getAdminOrders = asyncError(async (req, res, next) => {
   // 주문자의 아이디로 오더내역 가져오기
   const orders = await Order.find({});
@@ -54,16 +47,35 @@ export const getAdminOrders = asyncError(async (req, res, next) => {
   res.status(200).json({ success: true, orders });
 });
 
-export const getOrderDetails = asyncError(async (req, res, next) => {
-  const order = Order.findById(req.params.id);
+export const getMyOrders = asyncError(async (req, res, next) => {
+  // 주문자의 아이디로 오더내역 가져오기
+  const orders = await Order.find({ user: req.user._id });
 
-  if (!order) return next(new ErrorHandler("Order not found", 404));
+  res.status(200).json({ success: true, orders });
+});
+
+export const getOrderDetails = asyncError(async (req, res, next) => {
+  const order = await Order.findById(req.params.id);
+
+  if (!order) return next(new ErrorHandler("Order Not found", 404));
 
   res.status(200).json({ success: true, order });
 });
 
 export const processOrder = asyncError(async (req, res, next) => {
-  const orders = await Order.find({ user: req.user._id });
+  const order = await Order.findById(req.params.id);
+  if (!order) return next(new ErrorHandler("Order Not Found", 404));
 
-  res.status(200).json({ success: true, orders });
+  if (order.orderStatus === "Preparing") order.orderStatus = "Shipped";
+  else if (order.orderStatus === "Shipped") {
+    order.orderStatus = "Delivered";
+    order.deliveredAt = new Date(Date.now());
+  } else return next(new ErrorHandler("Order Already Delivered", 400));
+
+  await order.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Order Processed Successfully",
+  });
 });
