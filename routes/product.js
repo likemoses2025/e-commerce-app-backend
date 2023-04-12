@@ -4,7 +4,7 @@ import {
   createProduct,
   deleteProduct,
   deleteProductImage,
-  getAdminProduct,
+  getAdminProducts,
   getAllProducts,
   getProductDetails,
   updateProduct,
@@ -15,7 +15,7 @@ import { singleUpload } from "../middlewares/multer.js";
 const router = express.Router();
 
 router.get("/all", getAllProducts);
-router.get("/admin", isAuthenticated, isAdmin, getAdminProduct);
+router.get("/admin", isAuthenticated, isAdmin, getAdminProducts);
 
 router
   .route("/single/:id")
