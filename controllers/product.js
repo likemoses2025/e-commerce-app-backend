@@ -20,7 +20,17 @@ export const getAdminProducts = asyncError(async (req, res, next) => {
   // Search & Category query
   const products = await Product.find({}).populate("category");
 
-  res.status(200).json({ success: true, products });
+  // 제품 품절
+  const outOfStock = products.filter((product) => product.stock === 0);
+
+  res
+    .status(200)
+    .json({
+      success: true,
+      products,
+      outOfStock: outOfStock.length,
+      inStock: products.length - outOfStock.length,
+    });
 });
 
 export const getProductDetails = asyncError(async (req, res, next) => {
