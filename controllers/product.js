@@ -185,7 +185,7 @@ export const deleteCategory = asyncError(async (req, res, next) => {
     await product.save();
   }
 
-  await category.remove();
+  await category.deleteOne();
 
   res.status(200).json({
     success: true,
