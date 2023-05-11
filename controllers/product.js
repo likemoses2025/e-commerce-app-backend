@@ -75,9 +75,12 @@ export const createProduct = asyncError(async (req, res, next) => {
 export const updateProduct = asyncError(async (req, res, next) => {
   const { name, description, category, price, stock } = req.body;
 
+  console.log("Controller ID : " + req.params.id);
+  console.log("Action 1");
   const product = await Product.findById(req.params.id);
+  console.log("Action 2");
   if (!product) return next(new ErrorHandler("Product not found", 404));
-
+  console.log("Action 3");
   if (name) product.name = name;
   if (description) product.description = description;
   if (category) product.category = category;
