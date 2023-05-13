@@ -133,7 +133,10 @@ export const updatePic = asyncError(async (req, res, next) => {
   const file = getDataUri(req.file);
 
   // 클라우드 이미지 삭제
-  await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+
+  if (user.avatar) {
+    await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+  }
 
   // 클라우드 이미지 등록
   const myCloud = await cloudinary.v2.uploader.upload(file.content);
